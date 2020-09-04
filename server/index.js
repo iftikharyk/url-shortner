@@ -9,7 +9,7 @@ require('dotenv').config();
 
 const db = monk(process.env.MONGO_URI);
 const urls = db.get('urls');
-urls.createIndex('name');
+urls.createIndex({ slug: 1 }, { unique: true });
 
 const app = express();
 const port = process.env.PORT || 1337;
@@ -31,9 +31,19 @@ app.use(express.static('./public'));
 //     });
 // });
 
-// app.get('/:id', (req, res) => {
-//     // redirects to url
-// });
+app.get('/:id', async (req, res) => {
+    // redirects to url
+    const { id: slug } = req.params;
+    try {
+        const url = await urls.findOne({ slug });
+        if (url) {
+            res.redirect(url.url);
+        }
+        res.redirect('/?error=${slug} not found');
+    } catch (error) {
+        res.redirect('/?error=Link not found')
+    }
+});
 
 app.post('/url', async (req, res, next) => {
     // create new url
